@@ -14,7 +14,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Content Remove="Assets\cross.png" />
+    <Content Include="Assets\cross.png" />
   </ItemGroup>
 
   <ItemGroup>

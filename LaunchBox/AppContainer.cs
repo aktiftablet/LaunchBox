@@ -21,43 +21,42 @@ namespace LaunchBox
             get => _isInEditMode;
             set
             {
-                if (_isInEditMode == value) return;
-                _isInEditMode = value;
-                // propagate to app entries so item template can bind directly
-                foreach (var app in Apps)
-                {
-                    app.IsInEditMode = value;
-                }
-                OnPropertyChanged();
-            }
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-    }
-
-    public class AppEntry : INotifyPropertyChanged
-    {
-        public string DisplayName { get; set; } = string.Empty;
-        public string FilePath { get; set; } = string.Empty;
-        public string? IconPath { get; set; }
-
-        private bool _isInEditMode;
-        [JsonIgnore]
-        public bool IsInEditMode
-        {
-            get => _isInEditMode;
-            set
-            {
-                if (_isInEditMode == value) return;
-                _isInEditMode = value;
-                OnPropertyChanged();
-            }
-        }
-
+                                if (_isInEditMode == value) return;
+                                _isInEditMode = value;
+                                // propagate to app entries so item template can bind directly
+                                foreach (var app in Apps)
+                                {
+                                    app.IsInEditMode = value;
+                                }
+                                OnPropertyChanged();
+                            }
+                        }
+                
+                        public event PropertyChangedEventHandler? PropertyChanged;
+                        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+                        {
+                            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+                        }
+                    }
+                
+                    public class AppEntry : INotifyPropertyChanged
+                    {
+                        public string DisplayName { get; set; } = string.Empty;
+                        public string FilePath { get; set; } = string.Empty;
+                        public string? IconPath { get; set; }
+                
+                        private bool _isInEditMode;
+                        [JsonIgnore]
+                        public bool IsInEditMode
+                        {
+                            get => _isInEditMode;
+                            set
+                            {
+                                if (_isInEditMode == value) return;
+                                _isInEditMode = value;
+                                OnPropertyChanged();
+                            }
+                        }
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {

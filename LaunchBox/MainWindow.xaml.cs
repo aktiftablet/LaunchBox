@@ -370,6 +370,26 @@ namespace LaunchBox
                     Containers.Insert(addIndex, newContainer);
                     return;
                 }
+
+                // If not in edit mode, launch all apps in the container
+                if (!container.IsInEditMode)
+                {
+                    foreach (var appEntry in container.Apps)
+                    {
+                        try
+                        {
+                            if (!string.IsNullOrWhiteSpace(appEntry.FilePath))
+                            {
+                                Process.Start(new ProcessStartInfo { FileName = appEntry.FilePath, UseShellExecute = true });
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Failed to launch app {appEntry.DisplayName}: {ex.Message}");
+                        }
+                    }
+                    // e.Handled = true; // Removed as ItemClickEventArgs does not have a Handled property
+                }
             }
         }
 
@@ -401,16 +421,8 @@ namespace LaunchBox
                     }
                 }
 
-                // Normal (non-edit) behavior: launch the app/file.
-                try
-                {
-                    if (!string.IsNullOrWhiteSpace(appEntry.FilePath))
-                    {
-                        Process.Start(new ProcessStartInfo { FileName = appEntry.FilePath, UseShellExecute = true });
-                        e.Handled = true;
-                    }
-                }
-                catch { }
+                // If not in edit mode, do nothing here. The GridView_ItemClick will handle launching all apps.
+                e.Handled = true;
             }
         }
 
