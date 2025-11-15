@@ -1,0 +1,4 @@
+<!-- In NormalContainerTemplate, add RightTapped to the Border -->
+<Border x:Name="ContainerBorder" BorderThickness="2" BorderBrush="Transparent" RightTapped="Container_RightTapped">
+    ...
+</Border>

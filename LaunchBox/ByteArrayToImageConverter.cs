@@ -8,7 +8,7 @@ namespace LaunchBox
 {
     public class ByteArrayToImageConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, string language)
+        public object? Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is byte[] bytes && bytes.Length > 0)
             {

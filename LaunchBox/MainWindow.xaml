@@ -9,53 +9,76 @@
     mc:Ignorable="d"
     Title="LaunchBox">
 
-
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
+
     <Grid Background="Transparent" Padding="20">
 
+        <!-- converter and templates -->
         <Grid.Resources>
-            <!-- Normal container (no direct Drop/DragOver here) -->
+            <local:BooleanToVisibilityConverter x:Key="BoolToVis" />
+
             <DataTemplate x:Key="NormalContainerTemplate" x:DataType="local:AppContainer">
-                <Grid Width="260"
-                      Height="180"
-                      CornerRadius="16"
-                      Padding="8"
-                      Background="#AA202020">
+                <Border x:Name="ContainerBorder" BorderThickness="2" BorderBrush="Transparent" RightTapped="Container_RightTapped">
+                    <Grid x:Name="ContainerGrid" Width="260"
+                          Height="180"
+                          CornerRadius="16"
+                          Padding="8"
+                          Background="#AA202020">
 
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                        <Grid.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform/>
+                            </TransformGroup>
+                        </Grid.RenderTransform>
 
-                    <!-- Apps area -->
-                    <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsHitTestVisible="False">
-                        <ItemsControl ItemsSource="{x:Bind Apps}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="8"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="local:AppEntry">
-                                    <StackPanel Width="64" HorizontalAlignment="Center" Spacing="4">
-                                        <Image Source="{Binding IconPath}"
-                                               Width="48" Height="48" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{x:Bind DisplayName}" FontSize="10" TextWrapping="Wrap" HorizontalAlignment="Center" MaxLines="2" TextAlignment="Center" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                    <!-- Optional container title (removed) -->
-                    <TextBlock Grid.Row="1" Text="" Margin="6,8,6,0" Opacity="0.8" HorizontalAlignment="Left" />
+                        <!-- Apps area -->
+                        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsHitTestVisible="True">
+                            <ItemsControl x:Name="AppsList" ItemsSource="{x:Bind Apps}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="local:AppEntry">
+                                        <!-- Overlay grid: icon + delete badge -->
+                                        <Grid Width="64" HorizontalAlignment="Center" Margin="0">
+                                            <!-- main content -->
+                                            <StackPanel Width="64" HorizontalAlignment="Center" Spacing="4" Tapped="App_Tapped">
+                                                <!-- inner grid sized to icon so badge positions relative to the icon -->
+                                                <Grid Width="48" Height="48" HorizontalAlignment="Center" VerticalAlignment="Top">
+                                                    <Image Source="{Binding IconPath}" Width="48" Height="48" HorizontalAlignment="Center" Stretch="Uniform"/>
+                                                    <Image
+                                                           Source="ms-appx:///Assets/cross.png"
+                                                           Width="18" Height="18"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Top"
+                                                           Margin="0,-4,-4,0"
+                                                           Stretch="Uniform"
+                                                           Visibility="{Binding IsInEditMode, Converter={StaticResource BoolToVis}}"/>
+                                                </Grid>
 
-                </Grid>
+                                                <TextBlock Text="{x:Bind DisplayName}" FontSize="10" TextWrapping="Wrap" HorizontalAlignment="Center" MaxLines="2" TextAlignment="Center"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <TextBlock Grid.Row="1" Text="" Margin="6,8,6,0" Opacity="0.8" HorizontalAlignment="Left" />
+
+                    </Grid>
+                </Border>
             </DataTemplate>
 
-            <!-- + Add Container özel kartı -->
             <DataTemplate x:Key="AddContainerTemplate" x:DataType="local:AppContainer">
                 <Grid Width="260"
                       Height="180"
@@ -63,32 +86,18 @@
                       Background="#33FFFFFF"
                       BorderBrush="#55FFFFFF"
                       BorderThickness="2">
-
-                    <StackPanel VerticalAlignment="Center"
-                                HorizontalAlignment="Center"
-                                Spacing="8">
-
-                        <TextBlock Text="+"
-                                   FontSize="48"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center"/>
-
-                        <TextBlock Text=""
-                                   Opacity="0.6"
-                                   HorizontalAlignment="Center"
-                                   FontSize="14"/>
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
+                        <TextBlock Text="+" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="" Opacity="0.6" HorizontalAlignment="Center" FontSize="14"/>
                     </StackPanel>
-
                 </Grid>
             </DataTemplate>
 
-            <!-- Template Selector -->
             <local:ContainerTemplateSelector x:Key="ContainerSelector"
                                              NormalTemplate="{StaticResource NormalContainerTemplate}"
                                              AddTemplate="{StaticResource AddContainerTemplate}"/>
         </Grid.Resources>
 
-        <!-- GridView with centralized drag/drop handlers -->
         <GridView x:Name="ContainersGridView"
                   ItemsSource="{x:Bind Containers}"
                   Margin="16"

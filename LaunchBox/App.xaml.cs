@@ -50,23 +50,48 @@ namespace LaunchBox
                 try
                 {
                     string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    string saveDir = Path.Combine(appDataPath, "LaunchBox");
-                    string saveFile = Path.Combine(saveDir, "data.json");
-                    string iconCacheDir = Path.Combine(saveDir, "Icons");
+                    string saveDir = System.IO.Path.Combine(appDataPath, "LaunchBox");
+                    string saveFile = System.IO.Path.Combine(saveDir, "data.json");
 
+                    // Delete the data file
                     if (File.Exists(saveFile))
                     {
                         File.Delete(saveFile);
+                        System.Diagnostics.Debug.WriteLine("Data file deleted successfully");
                     }
-                    if (Directory.Exists(iconCacheDir))
+                    else
                     {
-                        Directory.Delete(iconCacheDir, recursive: true);
+                        System.Diagnostics.Debug.WriteLine("Data file not found, nothing to delete");
                     }
+
+                    // Delete the icon cache directory
+                    //if (Directory.Exists(iconCacheDir))
+                    //{
+                    //    Directory.Delete(iconCacheDir, recursive: true);
+                    //    System.Diagnostics.Debug.WriteLine("Icon cache directory deleted successfully");
+                    //}
+                    //else
+                    //{
+                    //    System.Diagnostics.Debug.WriteLine("Icon cache directory not found, nothing to delete");
+                    //}
+
+                    // If the main directory is now empty, remove it as well
+                    if (Directory.Exists(saveDir) && !Directory.GetFileSystemEntries(saveDir).Any())
+                    {
+                        Directory.Delete(saveDir);
+                        System.Diagnostics.Debug.WriteLine("LaunchBox directory deleted successfully");
+                    }
+
+                    // Exit the application immediately after clearing data
+                    System.Diagnostics.Debug.WriteLine("Data cleared successfully. Exiting application.");
+                    Environment.Exit(0);
+                    return;
                 }
                 catch (Exception ex)
                 {
-                    // Optionally, log this error. For now, we'll just let the app continue.
                     System.Diagnostics.Debug.WriteLine($"Failed to clear data: {ex.Message}");
+                    Environment.Exit(1); // Exit with error code
+                    return;
                 }
             }
 
