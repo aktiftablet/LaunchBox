@@ -9,7 +9,7 @@
 
   <Identity
     Name="0c893679-c807-4279-888a-57e848c67716"
-    Publisher="CN=Berk"
+    Publisher="CN=Launchbox"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="0c893679-c807-4279-888a-57e848c67716" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

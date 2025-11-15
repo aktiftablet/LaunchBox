@@ -26,8 +26,9 @@ namespace LaunchBox
     {
         public ObservableCollection<AppContainer> Containers { get; } = new ObservableCollection<AppContainer>();
 
-        private static readonly string AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        private static readonly string SaveDir = Path.Combine(AppDataPath, "LaunchBox");
+        private static readonly string BasePath = ApplicationData.Current.LocalFolder.Path;
+        private static readonly string AppDataPath = BasePath; // Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        private static readonly string SaveDir = Path.Combine(BasePath, "LaunchBox");
         private static readonly string IconCacheDir = Path.Combine(SaveDir, "Icons");
         private static readonly string SaveFile = Path.Combine(SaveDir, "data.json");
 
@@ -57,6 +58,8 @@ namespace LaunchBox
             this.SetTitleBar(null);
 
             // Load saved data (containers + window bounds)
+            Directory.CreateDirectory(DataPaths.SaveDir);
+            Directory.CreateDirectory(DataPaths.IconCacheDir);
             LoadData();
 
             // Restore window bounds if present inside LoadData (LoadData calls RestoreWindowBounds when available)
@@ -348,50 +351,119 @@ namespace LaunchBox
             return null;
         }
 
-        private void GridView_ItemClick(object sender, ItemClickEventArgs e)
+        //private void GridView_ItemClick(object sender, TappedRoutedEventArgs e)
+        //{
+        //    if (e.ClickedItem is AppContainer container)
+        //    {
+        //        if (_containerInEditMode != null && _containerInEditMode != container)
+        //        {
+        //            ExitDeleteMode();
+        //            return;
+        //        }
+
+        //        if (_containerInEditMode != null && _containerInEditMode == container)
+        //        {
+        //            return;
+        //        }
+
+        //        if (container.IsAddButton)
+        //        {
+        //            var addIndex = Containers.IndexOf(container);
+        //            var newContainer = new AppContainer { Name = $"Container {Containers.Count}" };
+        //            Containers.Insert(addIndex, newContainer);
+        //            return;
+        //        }
+
+        //        // If not in edit mode, launch all apps in the container
+        //        if (!container.IsInEditMode)
+        //        {
+        //            foreach (var appEntry in container.Apps)
+        //            {
+        //                try
+        //                {
+        //                    if (!string.IsNullOrWhiteSpace(appEntry.FilePath))
+        //                    {
+        //                        Process.Start(new ProcessStartInfo { FileName = appEntry.FilePath, UseShellExecute = true });
+        //                    }
+        //                }
+        //                catch (Exception ex)
+        //                {
+        //                    Debug.WriteLine($"Failed to launch app {appEntry.DisplayName}: {ex.Message}");
+        //                }
+        //            }
+        //            // e.Handled = true; // Removed as ItemClickEventArgs does not have a Handled property
+        //        }
+        //    }
+        //}
+
+        private void Container_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            if (e.ClickedItem is AppContainer container)
+            // Tıklanan Grid/Border'ın DataContext'inden container'ı al
+            if (sender is not FrameworkElement fe || fe.DataContext is not AppContainer container)
+                return;
+
+            // 1) Önce + container'ı ele alalım
+            if (container.IsAddButton)
             {
-                if (_containerInEditMode != null && _containerInEditMode != container)
+                // Başka bir container edit moddaysa, önce edit moddan çık
+                if (_containerInEditMode != null)
                 {
                     ExitDeleteMode();
-                    return;
                 }
 
-                if (_containerInEditMode != null && _containerInEditMode == container)
+                var addIndex = Containers.IndexOf(container);
+                var newContainer = new AppContainer
                 {
-                    return;
-                }
+                    Name = $"Container {Containers.Count}",
+                    IsInEditMode = false
+                };
 
-                if (container.IsAddButton)
-                {
-                    var addIndex = Containers.IndexOf(container);
-                    var newContainer = new AppContainer { Name = $"Container {Containers.Count}" };
-                    Containers.Insert(addIndex, newContainer);
-                    return;
-                }
+                // + kartının hemen önüne ekle
+                Containers.Insert(addIndex, newContainer);
+                return;
+            }
 
-                // If not in edit mode, launch all apps in the container
-                if (!container.IsInEditMode)
+            // 2) Edit mode mantığı
+            // Başka bir container edit modundaysa ve bu o değilse: önce edit moddan çık
+            if (_containerInEditMode != null && _containerInEditMode != container)
+            {
+                ExitDeleteMode();
+                return;
+            }
+
+            // Aynı container zaten edit moddaysa, ekstra bir şey yapma
+            if (_containerInEditMode != null && _containerInEditMode == container)
+            {
+                return;
+            }
+
+            // 3) Normal modda: içindeki tüm uygulamaları çalıştır
+            if (!container.IsInEditMode)
+            {
+                foreach (var appEntry in container.Apps)
                 {
-                    foreach (var appEntry in container.Apps)
+                    try
                     {
-                        try
+                        if (!string.IsNullOrWhiteSpace(appEntry.FilePath))
                         {
-                            if (!string.IsNullOrWhiteSpace(appEntry.FilePath))
+                            Process.Start(new ProcessStartInfo
                             {
-                                Process.Start(new ProcessStartInfo { FileName = appEntry.FilePath, UseShellExecute = true });
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine($"Failed to launch app {appEntry.DisplayName}: {ex.Message}");
+                                FileName = appEntry.FilePath,
+                                UseShellExecute = true
+                            });
                         }
                     }
-                    // e.Handled = true; // Removed as ItemClickEventArgs does not have a Handled property
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Failed to launch app {appEntry.DisplayName}: {ex.Message}");
+                    }
                 }
+
+                // İstersen event'in yukarıya (başka kontrol varsa) gitmesini engelle:
+                // e.Handled = true;  // TappedRoutedEventArgs'ta bu property VAR, istersen açabilirsin.
             }
         }
+
 
         private void App_Tapped(object sender, TappedRoutedEventArgs e)
         {
@@ -422,32 +494,32 @@ namespace LaunchBox
                 }
 
                 // If not in edit mode, do nothing here. The GridView_ItemClick will handle launching all apps.
-                e.Handled = true;
+                //e.Handled = true;
             }
         }
 
-        private void GridView_RightTapped(object sender, RightTappedRoutedEventArgs e)
-        {
-            // kept for backward compatibility; prefer per-template Container_RightTapped.
-            if (_containerInEditMode != null)
-            {
-                ExitDeleteMode();
-                e.Handled = true;
-                return;
-            }
+        //private void GridView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        //{
+        //    // kept for backward compatibility; prefer per-template Container_RightTapped.
+        //    if (_containerInEditMode != null)
+        //    {
+        //        ExitDeleteMode();
+        //        e.Handled = true;
+        //        return;
+        //    }
 
-            DependencyObject? current = e.OriginalSource as DependencyObject;
-            while (current != null && !(current is GridViewItem))
-            {
-                current = VisualTreeHelper.GetParent(current);
-            }
+        //    DependencyObject? current = e.OriginalSource as DependencyObject;
+        //    while (current != null && !(current is GridViewItem))
+        //    {
+        //        current = VisualTreeHelper.GetParent(current);
+        //    }
 
-            if (current is GridViewItem gvi && gvi.DataContext is AppContainer container && !container.IsAddButton)
-            {
-                EnterDeleteMode(container, gvi as FrameworkElement);
-                e.Handled = true;
-            }
-        }
+        //    if (current is GridViewItem gvi && gvi.DataContext is AppContainer container && !container.IsAddButton)
+        //    {
+        //        EnterDeleteMode(container, gvi as FrameworkElement);
+        //        e.Handled = true;
+        //    }
+        //}
 
         private void EnterDeleteMode(AppContainer container, FrameworkElement element)
         {
@@ -539,6 +611,28 @@ namespace LaunchBox
             if (sender is FrameworkElement fe && fe.DataContext is AppContainer container && !container.IsAddButton)
             {
                 EnterDeleteMode(container, fe);
+                e.Handled = true;
+            }
+        }
+
+        // New: handler for container-level delete cross in the top-right corner of a container
+        private void ContainerDelete_Tapped(object? sender, TappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.DataContext is AppContainer container)
+            {
+                if (!container.IsAddButton && Containers.Contains(container))
+                {
+                    Containers.Remove(container);
+                    // If we were editing this container, exit edit mode (this also saves)
+                    if (_containerInEditMode == container)
+                    {
+                        ExitDeleteMode();
+                    }
+                    else
+                    {
+                        SaveData();
+                    }
+                }
                 e.Handled = true;
             }
         }

@@ -20,9 +20,9 @@
             <local:BooleanToVisibilityConverter x:Key="BoolToVis" />
 
             <DataTemplate x:Key="NormalContainerTemplate" x:DataType="local:AppContainer">
-                <Border x:Name="ContainerBorder" BorderThickness="2" BorderBrush="Transparent" RightTapped="Container_RightTapped">
-                    <Grid x:Name="ContainerGrid" Width="260"
-                          Height="180"
+                <Border x:Name="ContainerBorder" BorderThickness="2" BorderBrush="Transparent" Background="Transparent" RightTapped="Container_RightTapped" Tapped="Container_Tapped">
+                    <Grid x:Name="ContainerGrid" Width="380"
+                          Height="240"
                           CornerRadius="16"
                           Padding="8"
                           Background="#AA202020">
@@ -39,17 +39,22 @@
                         </Grid.RowDefinitions>
 
                         <!-- Apps area -->
-                        <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" IsHitTestVisible="True">
+                        <!-- Changed scroll behavior and panel to allow wrapping to additional rows -->
+                        <ScrollViewer Grid.Row="0"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      VerticalScrollBarVisibility="Auto"
+                                      IsHitTestVisible="True">
                             <ItemsControl x:Name="AppsList" ItemsSource="{x:Bind Apps}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal" Spacing="8"/>
+                                        <!-- Use WrapGrid so items wrap to the next row when they exceed width -->
+                                        <WrapGrid Orientation="Horizontal" HorizontalAlignment="Left"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="local:AppEntry">
                                         <!-- Overlay grid: icon + delete badge -->
-                                        <Grid Width="64" HorizontalAlignment="Center" Margin="0">
+                                        <Grid Width="64" HorizontalAlignment="Center" Margin="0,0,8,8">
                                             <!-- main content -->
                                             <StackPanel Width="64" HorizontalAlignment="Center" Spacing="4" Tapped="App_Tapped">
                                                 <!-- inner grid sized to icon so badge positions relative to the icon -->
@@ -57,11 +62,12 @@
                                                     <Image Source="{Binding IconPath}" Width="48" Height="48" HorizontalAlignment="Center" Stretch="Uniform"/>
                                                     <Image
                                                            Source="ms-appx:///Assets/cross.png"
-                                                           Width="18" Height="18"
-                                                           HorizontalAlignment="Right"
-                                                           VerticalAlignment="Top"
-                                                           Margin="0,-4,-4,0"
+                                                           Width="38" Height="38"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0"
                                                            Stretch="Uniform"
+                                                           IsHitTestVisible="False"
                                                            Visibility="{Binding IsInEditMode, Converter={StaticResource BoolToVis}}"/>
                                                 </Grid>
 
@@ -75,6 +81,19 @@
 
                         <TextBlock Grid.Row="1" Text="" Margin="6,8,6,0" Opacity="0.8" HorizontalAlignment="Left" />
 
+                        <!-- Container-level delete cross shown in top-right when container.IsInEditMode == true -->
+                        <Image
+                            Source="ms-appx:///Assets/cross.png"
+                            Width="28"
+                            Height="28"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="8"
+                            Tapped="ContainerDelete_Tapped"
+                            Visibility="{Binding IsInEditMode, Converter={StaticResource BoolToVis}}"
+                            IsHitTestVisible="True"
+                            />
+
                     </Grid>
                 </Border>
             </DataTemplate>
@@ -85,7 +104,8 @@
                       CornerRadius="16"
                       Background="#33FFFFFF"
                       BorderBrush="#55FFFFFF"
-                      BorderThickness="2">
+                      BorderThickness="2"
+                      Tapped="Container_Tapped">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
                         <TextBlock Text="+" FontSize="48" FontWeight="Bold" HorizontalAlignment="Center"/>
                         <TextBlock Text="" Opacity="0.6" HorizontalAlignment="Center" FontSize="14"/>
@@ -102,7 +122,6 @@
                   ItemsSource="{x:Bind Containers}"
                   Margin="16"
                   IsItemClickEnabled="True"
-                  ItemClick="GridView_ItemClick"
                   SelectionMode="None"
                   ItemTemplateSelector="{StaticResource ContainerSelector}"
                   AllowDrop="True"
