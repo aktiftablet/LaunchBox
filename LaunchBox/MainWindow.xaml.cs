@@ -58,13 +58,19 @@ namespace LaunchBox
             this.SetTitleBar(null);
 
             // Load saved data (containers + window bounds)
-            Directory.CreateDirectory(DataPaths.SaveDir);
-            Directory.CreateDirectory(DataPaths.IconCacheDir);
+            Directory.CreateDirectory(SaveDir);
+            Directory.CreateDirectory(IconCacheDir);
             LoadData();
 
-            // Restore window bounds if present inside LoadData (LoadData calls RestoreWindowBounds when available)
+            if (!Containers.Any(c => !c.IsAddButton))
+            {
+                Containers.Add(new AppContainer { Name = "Default" });
+            }
+            if (!Containers.Any(c => c.IsAddButton))
+            {
+                Containers.Add(new AppContainer { IsAddButton = true });
+            }
 
-            Containers.Add(new AppContainer { IsAddButton = true });
             this.Closed += (sender, args) =>
             {
                 ExitDeleteMode(); // Ensure state is saved on close
